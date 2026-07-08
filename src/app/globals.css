@@ -24,3 +24,46 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Micro animation utilities used across the app */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatY {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+  100% { transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 420ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.float-y {
+  animation: floatY 4.5s ease-in-out infinite;
+}
+
+.focus-glow:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+}
+
+.spinner-smooth {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  border: 3px solid rgba(0,0,0,0.08);
+  border-top-color: rgba(99,102,241,1);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* small accessibility tweak: slightly heavier contrast for banner small text */
+.banner-small-contrast {
+  color: rgba(255,255,255,0.95);
+}
