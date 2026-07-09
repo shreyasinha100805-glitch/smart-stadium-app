@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged } from "@/lib/authWrapper";
 import { QRCodeSVG } from "qrcode.react";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -13,12 +13,20 @@ export default function Ticket() {
   const router = useRouter();
 
   useEffect(() => {
+    if (!auth) {
+      return;
+    }
+
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (u) setUser(u);
-      else router.push("/");
+      if (u) {
+        setUser(u);
+        return;
+      }
+
+      setUser(null);
     });
     return () => unsub();
-  }, [router]);
+  }, []);
 
   if (!user) return null;
 
