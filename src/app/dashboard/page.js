@@ -28,6 +28,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Info,
+  Accessibility,
+  Leaf,
+  BarChart3,
+  Bus,
 } from "lucide-react";
 
 export default function Dashboard() {
@@ -36,6 +40,9 @@ export default function Dashboard() {
   const [darkMode, setDarkMode] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [countdown, setCountdown] = useState("");
   const router = useRouter();
 
@@ -96,6 +103,12 @@ export default function Dashboard() {
     { text: "Beer Garden queue is now short", time: "20m ago", type: "info", icon: Info },
   ];
 
+  const quickSearchResults = [
+    { title: "Parking", detail: "Lot A and B are closest to Gate B4." },
+    { title: "Food", detail: "The South Concourse has the fastest service." },
+    { title: "Queue", detail: "Coffee Corner is shortest near halftime." },
+  ].filter((item) => item.title.toLowerCase().includes(searchQuery.toLowerCase()) || searchQuery.trim() === "");
+
   return (
     <div
       className={`min-h-screen transition-colors duration-500 ${
@@ -122,28 +135,76 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            aria-label="Search stadium"
-            className={`p-2 rounded-full transition-all duration-200 ${
-              darkMode
-                ? "bg-white/10 text-yellow-300 hover:bg-white/20"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Search size={18} />
-          </button>
-          <button
-            type="button"
-            aria-label="Help and support"
-            className={`p-2 rounded-full transition-all duration-200 ${
-              darkMode
-                ? "bg-white/10 text-sky-300 hover:bg-white/20"
-                : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <HelpCircle size={18} />
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Search stadium"
+              onClick={() => {
+                setShowSearch((value) => !value);
+                setShowHelp(false);
+              }}
+              className={`p-2 rounded-full transition-all duration-200 ${
+                darkMode
+                  ? "bg-white/10 text-yellow-300 hover:bg-white/20"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <Search size={18} />
+            </button>
+            {showSearch && (
+              <div className={`absolute right-0 mt-3 w-96 rounded-2xl border p-4 shadow-2xl z-50 ${darkMode ? "border-white/10 bg-slate-800" : "border-gray-100 bg-white"}`}>
+                <label className="mb-3 block text-sm font-semibold">Find something fast</label>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Try parking, food, or tickets"
+                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500 ${darkMode ? "border-white/10 bg-slate-700 text-white placeholder-slate-400" : "border-gray-200 bg-gray-50 text-gray-900"}`}
+                />
+                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
+                  {quickSearchResults.length > 0 ? (
+                    quickSearchResults.map((item) => (
+                      <div key={item.title} className={`rounded-xl p-3 transition-colors ${darkMode ? "bg-white/5 hover:bg-white/10" : "bg-gray-50 hover:bg-gray-100"}`}>
+                        <p className="text-sm font-semibold">{item.title}</p>
+                        <p className={`text-xs leading-relaxed ${darkMode ? "text-slate-300" : "text-gray-600"}`}>{item.detail}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className={`text-sm text-center py-2 ${darkMode ? "text-slate-400" : "text-gray-500"}`}>No matches found. Try another search.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Help and support"
+              onClick={() => {
+                setShowHelp((value) => !value);
+                setShowSearch(false);
+              }}
+              className={`p-2 rounded-full transition-all duration-200 ${
+                darkMode
+                  ? "bg-white/10 text-sky-300 hover:bg-white/20"
+                  : "bg-white text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <HelpCircle size={18} />
+            </button>
+            {showHelp && (
+              <div className={`absolute right-0 mt-3 w-80 rounded-2xl border p-4 shadow-2xl z-50 ${darkMode ? "border-white/10 bg-slate-800" : "border-gray-100 bg-white"}`}>
+                <p className="text-sm font-semibold text-indigo-600">🤖 Need help?</p>
+                <p className={`mt-2 text-sm leading-relaxed ${darkMode ? "text-slate-300" : "text-gray-700"}`}>
+                  Use the floating AI assistant button at the bottom right to ask about parking, food, tickets, queues, and weather.
+                </p>
+                <div className={`mt-4 rounded-lg p-3 ${darkMode ? "bg-white/5" : "bg-indigo-50"}`}>
+                  <p className="text-xs font-medium text-indigo-600">💡 Tip:</p>
+                  <p className={`text-xs mt-1 ${darkMode ? "text-slate-400" : "text-indigo-700"}`}>The search button above helps you find quick answers right here.</p>
+                </div>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setDarkMode(!darkMode)}
@@ -451,6 +512,42 @@ export default function Dashboard() {
               title="Match News"
               desc="Live updates & scores"
               color="from-yellow-500 to-orange-600"
+              dark={darkMode}
+            />
+          </Link>
+          <Link href="/accessibility">
+            <FeatureCard
+              icon={<Accessibility size={22} />}
+              title="Accessibility"
+              desc="Inclusive features & support"
+              color="from-indigo-500 to-purple-600"
+              dark={darkMode}
+            />
+          </Link>
+          <Link href="/sustainability">
+            <FeatureCard
+              icon={<Leaf size={22} />}
+              title="Sustainability"
+              desc="Eco-friendly stadium"
+              color="from-green-500 to-emerald-600"
+              dark={darkMode}
+            />
+          </Link>
+          <Link href="/operations">
+            <FeatureCard
+              icon={<BarChart3 size={22} />}
+              title="Operations"
+              desc="Real-time analytics"
+              color="from-blue-500 to-cyan-600"
+              dark={darkMode}
+            />
+          </Link>
+          <Link href="/transportation">
+            <FeatureCard
+              icon={<Bus size={22} />}
+              title="Transportation"
+              desc="Transit & parking info"
+              color="from-pink-500 to-rose-600"
               dark={darkMode}
             />
           </Link>
