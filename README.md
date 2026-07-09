@@ -52,11 +52,19 @@ You can start editing the app by modifying files inside `src/app`. The page auto
 
 ```
 smart-stadium-app/
-├── public/          # Static assets
+├── public/                  # Static assets (images, icons, favicon)
 ├── src/
-│   └── app/         # App routes and pages
-├── next.config.mjs  # Next.js configuration
-└── package.json
+│   └── app/
+│       ├── layout.js        # Root layout (fonts, metadata, global providers)
+│       ├── page.js          # Dashboard / home page
+│       ├── globals.css      # Global styles
+│       └── components/      # Reusable UI components (cards, nav, widgets)
+├── next.config.mjs          # Next.js configuration (Turbopack root, etc.)
+├── jsconfig.json            # Path aliases & JS config
+├── eslint.config.mjs        # Linting rules
+├── postcss.config.mjs       # PostCSS/Tailwind config
+├── package.json             # Dependencies & scripts
+└── README.md                # Project documentation
 ```
 
 ---
