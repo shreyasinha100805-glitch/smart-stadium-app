@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint . --max-warnings=0",
+    "test": "node --test \"test/**/*.test.mjs\""
   },
   "dependencies": {
     "firebase": "^12.15.0",

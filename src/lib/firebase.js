@@ -1,20 +1,45 @@
-import firebase from "firebase/compat/app";
-import "firebase/compat/auth";
-import "firebase/compat/firestore";
+import { initializeApp, getApps } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { createMockAuth } from "./mockAuth.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBal1uKwqhmtoo7tPirmTi43Gpa31pAPUE",
-  authDomain: "smart-stadium-app.firebaseapp.com",
-  projectId: "smart-stadium-app",
-  storageBucket: "smart-stadium-app.firebasestorage.app",
-  messagingSenderId: "6493650084",
-  appId: "1:6493650084:web:efef7259311d7b1587ba31",
-  measurementId: "G-HJN37Q3R3G",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
+const isBrowser = typeof window !== "undefined";
+const isPlaceholderValue = (value) =>
+  typeof value === "string" &&
+  (value.includes("your_") || value.includes("example") || value.includes("placeholder"));
+
+const validConfig =
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  !isPlaceholderValue(firebaseConfig.apiKey) &&
+  !isPlaceholderValue(firebaseConfig.authDomain) &&
+  !isPlaceholderValue(firebaseConfig.projectId);
+
+let app = null;
+let authInstance = null;
+
+// Initialize Firebase if config is valid
+if (isBrowser && validConfig) {
+  try {
+    app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    authInstance = getAuth(app);
+  } catch (error) {
+    console.warn("Firebase initialization failed:", error);
+  }
+} else if (isBrowser && !validConfig) {
+  console.warn("Firebase config is not valid; falling back to mock auth.");
 }
 
-export const auth = firebase.auth();
-export const db = firebase.firestore();
+export const auth = authInstance || (isBrowser ? createMockAuth() : null);
+export const db = app ? getFirestore(app) : null;

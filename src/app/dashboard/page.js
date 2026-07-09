@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "@/lib/authWrapper";
+import { matchDate, formatCountdown } from "@/lib/countdown.mjs";
 import {
   Ticket,
   MapPin,
@@ -38,27 +39,12 @@ export default function Dashboard() {
   const [countdown, setCountdown] = useState("");
   const router = useRouter();
 
-  const matchDate = new Date("2026-08-20T19:30:00Z");
   const homeTeam = "Stadium Tigers";
   const awayTeam = "City Falcons";
 
-  const formatCountdown = (diff) => {
-    const totalSeconds = Math.max(0, Math.floor(diff / 1000));
-    const days = Math.floor(totalSeconds / 86400);
-    const hours = Math.floor((totalSeconds % 86400) / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = totalSeconds % 60;
-
-    if (days > 0) {
-      return `${days}d ${hours}h ${minutes}m`;
-    }
-
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-  };
-
   useEffect(() => {
     const updateCountdown = () => {
-      const diff = matchDate.getTime() - new Date().getTime();
+      const diff = matchDate.getTime() - Date.now();
       if (diff <= 0) {
         setCountdown("Kickoff now");
         return;
@@ -69,20 +55,31 @@ export default function Dashboard() {
     updateCountdown();
     const timer = setInterval(updateCountdown, 1000);
     return () => clearInterval(timer);
-  }, [matchDate]);
+  }, []);
 
   useEffect(() => {
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) setUser(currentUser);
-      else router.push("/");
+      if (currentUser) {
+        setUser(currentUser);
+        setLoading(false);
+        return;
+      }
+
+      setUser(null);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const handleLogout = async () => {
+    if (!auth) return;
     await signOut(auth);
-    router.push("/");
+    setUser(null);
   };
 
   if (loading) {
@@ -126,6 +123,8 @@ export default function Dashboard() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <button
+            type="button"
+            aria-label="Search stadium"
             className={`p-2 rounded-full transition-all duration-200 ${
               darkMode
                 ? "bg-white/10 text-yellow-300 hover:bg-white/20"
@@ -135,6 +134,8 @@ export default function Dashboard() {
             <Search size={18} />
           </button>
           <button
+            type="button"
+            aria-label="Help and support"
             className={`p-2 rounded-full transition-all duration-200 ${
               darkMode
                 ? "bg-white/10 text-sky-300 hover:bg-white/20"
@@ -144,7 +145,9 @@ export default function Dashboard() {
             <HelpCircle size={18} />
           </button>
           <button
+            type="button"
             onClick={() => setDarkMode(!darkMode)}
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
             className={`p-2 rounded-full transition-all duration-200 ${
               darkMode
                 ? "bg-white/10 text-yellow-300 hover:bg-white/20"
@@ -179,7 +182,7 @@ export default function Dashboard() {
               >
                 <div className="flex items-center justify-between gap-2 p-3 border-b border-gray-100/10">
                   <span className="font-semibold text-sm">Notifications</span>
-                  <button className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 hover:text-slate-700">
+                  <button type="button" className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500 hover:text-slate-700">
                     Mark all read
                   </button>
                 </div>
@@ -222,6 +225,9 @@ export default function Dashboard() {
 
           <div className="relative">
             <button
+              type="button"
+              aria-expanded={showProfile}
+              aria-controls="profile-panel"
               onClick={() => {
                 setShowProfile(!showProfile);
                 setShowNotifs(false);
@@ -242,6 +248,7 @@ export default function Dashboard() {
             </button>
             {showProfile && (
               <div
+                id="profile-panel"
                 className={`absolute right-0 mt-2 w-56 rounded-xl shadow-xl overflow-hidden border ${
                   darkMode
                     ? "bg-slate-800 border-white/10"

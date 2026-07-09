@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { auth } from "@/lib/firebase";
+import { useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-} from "firebase/auth";
+} from "@/lib/authWrapper";
 import { Mail, Lock, Eye, EyeOff, Moon, Sun, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged } from "@/lib/authWrapper";
 
 export default function Home() {
   const [email, setEmail] = useState("");
@@ -18,15 +19,25 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
+  useEffect(() => {
+    if (!auth) return;
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) router.replace("/dashboard");
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
   const handleSignup = async () => {
     setLoading(true);
     setMessage("");
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await createUserWithEmailAndPassword(email, password);
       setMessage("✅ Account created! You're logged in.");
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err) {
-      setMessage("❌ " + err.message.replace("Firebase: ", ""));
+      setMessage("❌ " + err.message.replace("Firebase: ", "").replace("Auth: ", ""));
     }
     setLoading(false);
   };
@@ -35,13 +46,18 @@ export default function Home() {
     setLoading(true);
     setMessage("");
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(email, password);
       setMessage("✅ Logged in successfully!");
-      router.push("/dashboard");
+      router.replace("/dashboard");
     } catch (err) {
-      setMessage("❌ " + err.message.replace("Firebase: ", ""));
+      setMessage("❌ " + err.message.replace("Firebase: ", "").replace("Auth: ", ""));
     }
     setLoading(false);
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await handleLogin();
   };
 
   return (
@@ -92,89 +108,108 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Email input */}
-        <div className="relative mb-4">
-          <Mail
-            size={18}
-            className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-              darkMode ? "text-gray-400" : "text-gray-400"
-            }`}
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={`w-full pl-10 pr-3 py-3 rounded-xl border outline-none transition-all duration-200 focus:ring-2 ${
-              darkMode
-                ? "bg-white/10 border-white/20 placeholder-gray-400 focus:ring-indigo-400"
-                : "bg-white border-gray-200 placeholder-gray-400 focus:ring-blue-400"
-            }`}
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="space-y-4" aria-label="Authentication form">
+          {/* Email input */}
+          <div className="relative mb-4">
+            <label htmlFor="email" className="sr-only">
+              Email address
+            </label>
+            <Mail
+              size={18}
+              className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+                darkMode ? "text-gray-400" : "text-gray-400"
+              }`}
+            />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className={`w-full pl-10 pr-3 py-3 rounded-xl border outline-none transition-all duration-200 focus:ring-2 ${
+                darkMode
+                  ? "bg-white/10 border-white/20 placeholder-gray-400 focus:ring-indigo-400"
+                  : "bg-white border-gray-200 placeholder-gray-400 focus:ring-blue-400"
+              }`}
+            />
+          </div>
 
-        {/* Password input */}
-        <div className="relative mb-6">
-          <Lock
-            size={18}
-            className={`absolute left-3 top-1/2 -translate-y-1/2 ${
-              darkMode ? "text-gray-400" : "text-gray-400"
-            }`}
-          />
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={`w-full pl-10 pr-10 py-3 rounded-xl border outline-none transition-all duration-200 focus:ring-2 ${
-              darkMode
-                ? "bg-white/10 border-white/20 placeholder-gray-400 focus:ring-indigo-400"
-                : "bg-white border-gray-200 placeholder-gray-400 focus:ring-blue-400"
-            }`}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-          </button>
-        </div>
+          {/* Password input */}
+          <div className="relative mb-6">
+            <label htmlFor="password" className="sr-only">
+              Password
+            </label>
+            <Lock
+              size={18}
+              className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+                darkMode ? "text-gray-400" : "text-gray-400"
+              }`}
+            />
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className={`w-full pl-10 pr-10 py-3 rounded-xl border outline-none transition-all duration-200 focus:ring-2 ${
+                darkMode
+                  ? "bg-white/10 border-white/20 placeholder-gray-400 focus:ring-indigo-400"
+                  : "bg-white border-gray-200 placeholder-gray-400 focus:ring-blue-400"
+              }`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
 
-        {/* Buttons */}
-        <div className="flex gap-3">
-          <button
-            onClick={handleSignup}
-            disabled={loading}
-            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white py-3 rounded-xl font-medium shadow-md transition-all duration-200 disabled:opacity-60"
-          >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : "Sign Up"}
-          </button>
-          <button
-            onClick={handleLogin}
-            disabled={loading}
-            className={`flex-1 flex items-center justify-center gap-2 active:scale-95 py-3 rounded-xl font-medium shadow-md transition-all duration-200 disabled:opacity-60 ${
-              darkMode
-                ? "bg-white/20 hover:bg-white/30 text-white"
-                : "bg-gray-900 hover:bg-black text-white"
-            }`}
-          >
-            {loading ? <Loader2 size={18} className="animate-spin" /> : "Log In"}
-          </button>
-        </div>
+          {/* Buttons */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={handleSignup}
+              disabled={loading}
+              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white py-3 rounded-xl font-medium shadow-md transition-all duration-200 disabled:opacity-60"
+            >
+              {loading ? <Loader2 size={18} className="animate-spin" /> : "Sign Up"}
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className={`flex-1 flex items-center justify-center gap-2 active:scale-95 py-3 rounded-xl font-medium shadow-md transition-all duration-200 disabled:opacity-60 ${
+                darkMode
+                  ? "bg-white/20 hover:bg-white/30 text-white"
+                  : "bg-gray-900 hover:bg-black text-white"
+              }`}
+            >
+              {loading ? <Loader2 size={18} className="animate-spin" /> : "Log In"}
+            </button>
+          </div>
 
-        {/* Message */}
-        {message && (
-          <p
-            className={`mt-5 text-sm text-center rounded-lg py-2 px-3 transition-all duration-300 ${
-              message.startsWith("✅")
-                ? "bg-green-500/10 text-green-500"
-                : "bg-red-500/10 text-red-500"
-            }`}
-          >
-            {message}
-          </p>
-        )}
+          {/* Message */}
+          {message && (
+            <p
+              role="status"
+              aria-live="polite"
+              className={`mt-5 text-sm text-center rounded-lg py-2 px-3 transition-all duration-300 ${
+                message.startsWith("✅")
+                  ? "bg-green-500/10 text-green-500"
+                  : "bg-red-500/10 text-red-500"
+              }`}
+            >
+              {message}
+            </p>
+          )}
+        </form>
       </div>
     </div>
   );
